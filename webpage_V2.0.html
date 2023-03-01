@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Pathology Report Reading</title>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          height: 83vh;
+        }
+        #pdf-container {
+          border: 20px solid #ccc;
+          box-sizing: border-box;
+          top: 80px;
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 50%;
+          position: relative;
+        }
+        #pdf-viewer {
+          width: 100%;
+          height: 100%;
+        }
+        #pdf-navigation {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 60px;
+            background-color: #eee;
+            width: 100%;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            box-sizing: border-box;
+          }
+          .navigation-btn {
+            padding: 10px;
+            margin: 5px;
+            background-color: #007acc;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .navigation-btn:hover {
+          background-color: #005a9e;
+        }
+        #timer {
+          margin-left: 20px;
+          font-size: 24px;
+          font-family: Calibri, sans-serif;
+          font-size: 20px;
+        }
+
+        #page-title-container {
+            background-color: #eee;
+            border: 1px solid #ccc;
+            padding: 40px;
+            margin: 0 auto;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 9999;
+          }
+          #page-title {
+            font-family: Calibri, sans-serif;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            margin: 0 auto;
+            z-index: 9999;
+          }
+          th, td {
+            border: 1px solid #ccc;
+            padding: 5px;
+          }
+          th {
+            background-color: #eee;
+            text-align: left; 
+        }
+         .form-container {
+          position: fixed;
+          font-family: Calibri, sans-serif;
+          top: 60px;
+          right: 0px;
+          width: 43%;
+          padding: 20px;
+          background-color: #fff;
+          border: 0px solid #ccc;
+          margin: 20px;
+          display: flex;
+          flex-direction: column;
+        }
+        #time-elapsed {
+            font-size: 5px;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1;
+          }
+
+          #time-elapsed-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1;
+            text-align: right;
+            visibility: hidden;
+          }
+        
+        .form-container label[for="time-elapsed"] {
+          display: none;
+          }
+          
+        .field-label {
+          font-size: 14px;
+          font-family: Calibri, sans-serif;
+          font-weight: bold;
+          margin-bottom: 16px;
+          }
+
+          .select-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            width: 100%;
+          }
+        select {
+          padding: 1px;
+          font-family: Calibri, sans-serif;
+          font-size: 14px;
+          border: 1px solid #ccc;
+          width: 60%;
+          margin-left: 3px;
+          margin-top: 3px;
+          margin-bottom: 10px;
+        }
+        
+        button {
+          background-color: #007acc;
+          color: #fff;
+          border: none;
+          cursor: pointer;
+          padding: 10px;
+          margin-top: 16px;
+          font-size: 16px;
+        }
+        
+        button:hover {
+          background-color: #005a9e;
+        }
+      </style>
+  </head>
+  <body>
+    <div id="page-title-container">
+        <h1 id="page-title">Pathology Report Reading</h1>
+      </div>
+    <div id="pdf-container">
+      <div id="pdf-viewer">
+        <iframe src="pdfs/pdf1.pdf#navpanes=0" width="100%" height="100%"></iframe>
+      </div>
+    </div>
+    <div id="pdf-navigation">
+      <button id="prev-btn" class="navigation-btn">Previous</button>
+      <button id="next-btn" class="navigation-btn">Next</button>
+      <div id="timer">00:00</div>
+    </div>
+    <div class="form-container">
+        <h1 class="block w-full text-center text-grey-darkest mb-6">Parameters</h1>
+        <form class="mb-4 flex flex-wrap justify-between" id="form">   
+            <input type="hidden" name="pdfFilename" id="pdf-filename">      
+            <div class="flex flex-col w-full mb-4">
+              <label class="field-label" for="pTstage">pT-Stage:</label>
+              <select class="bg-green-100 px-2 py-1 outline-none" name="pT-Stage" id="pTStage">
+                  <option value="pT2">pT2: Organ confined</option>
+                  <option value="pT3a">pT3a: Extraprostatic extension or microscopic invasion of bladder neck</option>
+                  <option value="pT3b">pT3b: Tumor invades seminal vesicle(s)</option>
+                  <option value="pT3">pT3 (subcategory cannot be determined)</option>
+                  <option value="pT4">pT4: Tumor is fixed or invades adjacent structures other than seminal vesicles such as external sphincter, rectum, bladder, levator muscles, and / or pelvic wall</option>
+                  <option value="x">other or cannot be assessed</option>
+                </select>
+          </div>
+          <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="Histologic Grade">Histologic Grade:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" name="Histologic Grade" id="histgrade">
+                <option value="GG1">Grade group 1 (Gleason Score 3 + 3 = 6)</option>
+                <option value="GG2">Grade group 2 (Gleason Score 3 + 4 = 7)</option>
+                <option value="GG3">Grade group 3 (Gleason Score 4 + 3 = 7)</option>
+                <option value="GG4">Grade group 4 (Gleason Score 4+4 / 3+5 / 5+3 = 8)</option>
+                <option value="GG5">Grade group 5 (Gleason Score 4+5 / 5+4 / 5+5 = 9 / 10)</option>
+                <option value="x">other or cannot be assessed</option>
+              </select>
+        </div>
+        <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="Tertiary Gleason Pattern">Tertiary Gleason Pattern:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" name="Tertiary Gleason Pattern" id="tgpattern">
+                <option value="0">not identified</option>
+                <option value="1">present</option>
+            </select>
+        </div>
+        <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="Presence of Extraprostatic Extension">Presence of Extraprostatic Extension:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" name="Extraprostatic Extension" id="eextension">
+                <option value="0">not identified</option>
+                <option value="1">present</option>
+                <option value="x">cannot be determined</option>
+            </select>
+        </div>
+        <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="Presence of Seminal Vesical Invasion">Presence of Seminal Vesical Invasion:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" name="SVI" id="SVI">
+              <option value="0">not identified</option>
+              <option value="1">present</option>
+              <option value="x">cannot be determined</option>
+            </select>
+        </div>
+        <div class="flex flex-col w-full mb-4">
+          <label class="field-label" for="Urinary Bladder Neck Invasion">Urinary Bladder Neck Invasion:</label>
+          <select class="bg-green-100 px-2 py-1 outline-none" name="Bladder Neck Invasion" id="Bladderneck">
+            <option value="0">not identified</option>
+            <option value="1">present</option>
+            <option value="x">cannot be determined</option>
+          </select>
+      </div>
+      <div class="flex flex-col w-full mb-4">
+        <label class="field-label" for="Lymphovascular Invasion">Lymphovascular Invasion:</label>
+        <select class="bg-green-100 px-2 py-1 outline-none" name="Lymphovascular Invasion" id="lymphovascInv">
+          <option value="0">not identified</option>
+          <option value="1">present</option>
+          <option value="x">cannot be determined</option>
+        </select>
+    </div>
+    <div class="flex flex-col w-full mb-4">
+      <label class="field-label" for="Perineural Invasion">Perineural Invasion:</label>
+      <select class="bg-green-100 px-2 py-1 outline-none" name="Perineural Invasion" id="perineuralInv">
+        <option value="0">not identified</option>
+        <option value="1">present</option>
+        <option value="x">cannot be determined</option>
+      </select>
+    </div>
+    <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="Surgical Margin Status">Surgical Margin Status:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" name="SMS" id="SMS">
+              <option value="0">not identified</option>
+              <option value="1">present</option>
+              <option value="x">cannot be determined</option>
+            </select>
+    </div>
+    <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="pN-Stage">pN-Stage:</label>
+            <select class="bg-green-100 px-2 py-1 outline-none" type="text" name="pN-Stage" id="pNStage">
+              <option value="x">pN not assigned (no nodes submitted or found)</option>
+              <option value="0">pN0: No positive regional nodes</option>
+              <option value="1">pN1: Metastasis in regional nodes</option>
+            </select>
+    </div>
+    <div class="flex flex-col w-full mb-4">
+      <label class="field-label" for="noNremov">Number of Lymph Nodes Removed:</label>
+      <select class="bg-green-100 px-2 py-1 outline-none" name="noNremov" id="noNremov">
+        <option value="0">None</option>
+        <option value="1">Exact number (specify)</option>
+        <option value="x">Cannot be determined</option>
+      </select>
+      <input type="text" name="noNremov_specify" id="noNremov_specify" style="display: none;">
+    </div>
+    <div class="flex flex-col w-full mb-4">
+      <label class="field-label" for="No N cancer">Number of Lymph Nodes Involved by Cancer:</label>
+      <select class="bg-green-100 px-2 py-1 outline-none" name="No N cancer" id="NoNcancer">
+        <option value="0">None</option>
+        <option value="1">Exact number (specify)</option>
+        <option value="x">Cannot be determined</option>
+      </select>
+      <input type="text" name="noNcancer_specify" id="noNcancer_specify" style="display: none;">
+    </div>
+    <div class="flex flex-col w-full mb-4">
+      <label class="field-label" for="Distant Metastasis">Distant Metastasis:</label>
+      <select class="bg-green-100 px-2 py-1 outline-none" name="Distant Metastasis" id="distmets">
+        <option value="0">not applicable</option>
+        <option value="1">present</option>
+        <option value="x">cannot be determined</option>
+      </select>
+    </div>
+    <div class="flex flex-col w-full mb-4">
+            <label class="field-label" for="time-elapsed">Time Elapsed</label>
+            <input class="bg-green-100 px-2 py-1 outline-none" type="text" name="Time Elapsed" id="time-elapsed" readonly>
+          </div>   
+          <button class="bg-orange-300 mx-auto" type="submit" id="submit">Submit</button>
+        </form>
+      </div>
+    </div>
+    <script>
+      const selectFields = [document.getElementById("noNremov"), document.getElementById("NoNcancer")];
+      const specifyFields = [document.getElementById("noNremov_specify"), document.getElementById("noNcancer_specify")];
+    
+      selectFields.forEach((selectField, i) => {
+        selectField.addEventListener("change", () => {
+          if (selectField.value === "1") {
+            specifyFields[i].style.display = "block";
+          } else {
+            specifyFields[i].style.display = "none";
+          }
+        });
+      });
+    </script>
+      <script>
+        const pdfs = [];
+        let currentIndex = 0;
+        const elapsedTimes = new Array(pdfs.length).fill(0);
+        const prevBtn = document.getElementById("prev-btn");
+        const nextBtn = document.getElementById("next-btn");
+        const timerElem = document.getElementById("timer");
+        let timerIntervalId = null;
+        
+        function startTimer() {
+          const now = Date.now();
+          const startTime = now - elapsedTimes[currentIndex];
+          timerIntervalId = setInterval(() => updateTimer(startTime), 1000);
+        }
+        
+        function stopTimer() {
+          clearInterval(timerIntervalId);
+        }
+        
+        function updateTimer(startTime) {
+            const now = Date.now();
+            elapsedTimes[currentIndex] = now - startTime;
+            const elapsedSeconds = Math.floor(elapsedTimes[currentIndex] / 1000);
+            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0");
+            const seconds = (elapsedSeconds % 60).toString().padStart(2, "0");
+            const timeElapsed = `${minutes}:${seconds}`;
+            timerElem.textContent = timeElapsed;
+            document.querySelector("#time-elapsed").value = elapsedSeconds; // update the time elapsed field in the form
+          }
+        
+        function loadPdfFiles() {
+          fetch('pdfs/file_list.txt') // replace with the URL of the file
+            .then(response => response.text())
+            .then(data => {
+              const links = data.trim().split('\n'); // split by line to get PDF filenames
+              pdfs.push(...links);
+              if (pdfs.length > 0) { // if there are PDF files, load the first one
+                const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
+                document.querySelector("iframe").src = pdfUrl;
+                document.querySelector("#pdf-filename").value = pdfs[currentIndex];
+                elapsedTimes[currentIndex] = 0;
+                startTimer();
+              } else {
+                console.log('No PDF files found in file list.');
+              }
+            })
+            .catch(error => {
+              console.error(`Error loading file list: ${error.message}`);
+            });
+        }
+        
+        nextBtn.addEventListener("click", () => {
+          stopTimer();
+          currentIndex++;
+          if (currentIndex >= pdfs.length) {
+            currentIndex = 0;
+          }
+          const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
+          document.querySelector("iframe").src = pdfUrl;
+          elapsedTimes[currentIndex] = 0;
+          startTimer();
+        }); 
+        
+        loadPdfFiles();        
+      </script>
+      <script>
+        const scriptURL = 'https://script.google.com/macros/s/AKfycby8_gb-eUVgY653hOmQsMgnt2iinkuj-xlgwRJPVo6WEIfDL-OqilHwKt0ukGMVt_S0/exec'
+        const form = document.querySelector('#form')
+        const btn = document.querySelector('#submit')
+    
+    
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          btn.disabled = true;
+          btn.innerHTML = "Loading...";
+          
+          const currentPdfFilename = pdfs[currentIndex]; // store the filename of the current PDF
+          stopTimer();
+          currentIndex++;
+          if (currentIndex >= pdfs.length) {
+            currentIndex = 0;
+          }
+          const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
+          document.querySelector("iframe").src = pdfUrl;
+          document.querySelector("#pdf-filename").value = pdfs[currentIndex];
+          elapsedTimes[currentIndex] = 0;
+          startTimer();
+          
+          console.log(form);
+          const formData = new FormData(form);
+          formData.append('pdf-filename', currentPdfFilename); // append the filename of the current PDF to the form data
+          fetch(scriptURL, { method: 'POST', body: formData })
+            .then(response => { 
+              btn.disabled = false;
+              btn.innerHTML = "Submit";
+              alert('Success!', response);
+              form.reset();
+              const formFields = form.querySelectorAll('input, select, textarea');
+              formFields.forEach(field => {
+                field.value = '';
+              });
+            })
+            .catch(error => {
+              btn.disabled = false;
+              btn.innerHTML = "Submit";
+              alert('Error!', error.message);
+            });
+        });
+        
+    </script>
+  </body>
+</html>
