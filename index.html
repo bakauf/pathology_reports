@@ -21,7 +21,7 @@
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 50%;
+          width: 55%;
           position: relative;
         }
         #pdf-viewer {
@@ -40,6 +40,7 @@
             left: 0;
             box-sizing: border-box;
           }
+          
           .navigation-btn {
             padding: 10px;
             margin: 5px;
@@ -47,17 +48,24 @@
             color: #fff;
             border: none;
             cursor: pointer;
-        }
-        .navigation-btn:hover {
-          background-color: #005a9e;
-        }
-        #timer {
-          margin-left: 20px;
-          font-size: 24px;
-          font-family: Calibri, sans-serif;
-          font-size: 20px;
-        }
-
+          }
+          
+          .navigation-btn:hover {
+            background-color: #005a9e;
+          }
+          
+          #pdf-number {
+            margin: 0 10px;
+            font-family: Calibri, sans-serif;
+            font-size: 20px;
+            font-weight: bold;
+          }
+          
+          #timer {
+            margin-left: 20px;
+            font-size: 24px;
+            font-family: Calibri, sans-serif;
+          }
         #page-title-container {
             background-color: #eee;
             border: 1px solid #ccc;
@@ -95,7 +103,7 @@
           font-family: Calibri, sans-serif;
           top: 60px;
           right: 0px;
-          width: 43%;
+          width: 38%;
           padding: 20px;
           background-color: #fff;
           border: 0px solid #ccc;
@@ -161,6 +169,59 @@
         button:hover {
           background-color: #005a9e;
         }
+        #pdf-list-sidebar {
+            position: fixed;
+            top: 80px;
+            right: -380px;
+            width: 300px;
+            height: 100%;
+            background-color: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+            transition: right 0.3s ease-in-out;
+            z-index: 999;
+            padding: 20px;
+            font-family: Calibri, sans-serif;
+          }
+          
+          #pdf-list-sidebar.open {
+            right: -100px;
+          }
+          
+          #pdf-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-family: Calibri, sans-serif;
+          }
+          
+          #pdf-list li {
+            margin-bottom: 10px;
+            font-family: Calibri, sans-serif;
+            font-size: 12px;
+          }
+          #pdf-list-btn {
+            position: absolute;
+            font-family: Calibri, sans-serif;
+            font-size: 14px;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            background-color: #007acc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 10000;
+          }
+          #pdf-list a {
+            text-decoration: none;
+            color: blue;
+          }
+          
+          #pdf-list a:hover {
+            text-decoration: underline;
+          }
+          
       </style>
   </head>
   <body>
@@ -169,14 +230,21 @@
       </div>
     <div id="pdf-container">
       <div id="pdf-viewer">
-        <iframe src="pdfs/pdf1.pdf#navpanes=0" width="100%" height="100%"></iframe>
+        <iframe src="https://drive.google.com/file/d/${pdfs[0]}/preview" width="100%" height="100%"></iframe>
       </div>
     </div>
     <div id="pdf-navigation">
-      <button id="prev-btn" class="navigation-btn">Previous</button>
-      <button id="next-btn" class="navigation-btn">Next</button>
-      <div id="timer">00:00</div>
-    </div>
+        <button id="prev-btn" class="navigation-btn">Previous</button>
+        <span id="pdf-number"></span>
+        <button id="next-btn" class="navigation-btn">Next</button>
+        <span id="timer"></span>
+      </div>
+      <button id="pdf-list-btn">View Report List</button>
+      <div id="pdf-list-sidebar">
+        <h3>REPORTS</h3>
+        <ul id="pdf-list">
+        </ul>
+      </div>      
     <div class="form-container">
         <h1 class="block w-full text-center text-grey-darkest mb-6">Parameters</h1>
         <form class="mb-4 flex flex-wrap justify-between" id="form">   
@@ -315,55 +383,104 @@
       });
     </script>
       <script>
-        const pdfs = [];
-        let currentIndex = 0;
-        const elapsedTimes = new Array(pdfs.length).fill(0);
-        const prevBtn = document.getElementById("prev-btn");
-        const nextBtn = document.getElementById("next-btn");
-        const timerElem = document.getElementById("timer");
-        let timerIntervalId = null;
-        
-        function startTimer() {
+        const pdfs = [
+        "1GOhRrzxG7A43XWX80QfxPLZlEhfby8md",
+        "1GUNTr54iLZ3OoCb8SOZyZYg6TgFqQtl7",
+        "1GZ9hxImc_FgEr_xG-PH-USz-FwzrtuN2",
+        "1G_2cvzCU6oQXqmjFgQV9WvowsbM6gShT"
+      ];
+      let currentIndex = 0;
+      const elapsedTimes = new Array(pdfs.length).fill(0);
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const currentPdfNumber = currentIndex + 1;
+      const totalPdfNumber = pdfs.length;
+      document.querySelector("#pdf-number").textContent = `Report ${currentPdfNumber} of ${totalPdfNumber}`;
+      const timerElem = document.getElementById("timer");
+      let timerIntervalId = null;
+
+        // Set the initial PDF to be displayed in the viewer
+  const initialPdfUrl = `https://drive.google.com/file/d/${pdfs[0]}/preview`;
+  document.querySelector("iframe").src = initialPdfUrl;
+      
+      function startTimer() {
+        const now = Date.now();
+        const startTime = now - elapsedTimes[currentIndex];
+        timerIntervalId = setInterval(() => updateTimer(startTime), 1000);
+      }
+      
+      function stopTimer() {
+        clearInterval(timerIntervalId);
+      }
+      
+      function updateTimer(startTime) {
           const now = Date.now();
-          const startTime = now - elapsedTimes[currentIndex];
-          timerIntervalId = setInterval(() => updateTimer(startTime), 1000);
+          elapsedTimes[currentIndex] = now - startTime;
+          const elapsedSeconds = Math.floor(elapsedTimes[currentIndex] / 1000);
+          const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0");
+          const seconds = (elapsedSeconds % 60).toString().padStart(2, "0");
+          const timeElapsed = `${minutes}:${seconds}`;
+          timerElem.textContent = timeElapsed;
+          document.querySelector("#time-elapsed").value = elapsedSeconds; // update the time elapsed field in the form
         }
-        
-        function stopTimer() {
-          clearInterval(timerIntervalId);
-        }
-        
-        function updateTimer(startTime) {
-            const now = Date.now();
-            elapsedTimes[currentIndex] = now - startTime;
-            const elapsedSeconds = Math.floor(elapsedTimes[currentIndex] / 1000);
-            const minutes = Math.floor(elapsedSeconds / 60).toString().padStart(2, "0");
-            const seconds = (elapsedSeconds % 60).toString().padStart(2, "0");
-            const timeElapsed = `${minutes}:${seconds}`;
-            timerElem.textContent = timeElapsed;
-            document.querySelector("#time-elapsed").value = elapsedSeconds; // update the time elapsed field in the form
-          }
-        
+      
         function loadPdfFiles() {
-          fetch('pdfs/file_list.txt') // replace with the URL of the file
-            .then(response => response.text())
-            .then(data => {
-              const links = data.trim().split('\n'); // split by line to get PDF filenames
-              pdfs.push(...links);
-              if (pdfs.length > 0) { // if there are PDF files, load the first one
-                const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
-                document.querySelector("iframe").src = pdfUrl;
-                document.querySelector("#pdf-filename").value = pdfs[currentIndex];
-                elapsedTimes[currentIndex] = 0;
-                startTimer();
-              } else {
-                console.log('No PDF files found in file list.');
+          if (pdfs.length > 0) {
+            const pdfUrl = `https://drive.google.com/file/d/${pdfs[currentIndex]}/preview`;
+            document.querySelector("iframe").src = pdfUrl;
+            const currentPdfNumber = currentIndex + 1;
+            const totalPdfNumber = pdfs.length;
+            const currentPdfFilename = `${pdfs[currentIndex]}.pdf`;
+            document.querySelector("#pdf-container").textContent = currentPdfFilename;
+            pdfNumberElem.textContent = `Report ${currentPdfNumber} of ${totalPdfNumber}`;
+            elapsedTimes[currentIndex] = 0;
+            startTimer();
+            currentPdfFilename = `${pdfs[currentIndex]}.pdf`;
+        
+            // update the active report in the sidebar list
+            const pdfLinks = document.querySelectorAll("#pdf-list li a");
+            pdfLinks.forEach((link, index) => {
+              link.classList.remove("active");
+              if (index === currentIndex) {
+                link.classList.add("active");
               }
-            })
-            .catch(error => {
-              console.error(`Error loading file list: ${error.message}`);
             });
+        
+            // submit the form and load the next PDF after the form has been submitted
+            const pdfFilenameInput = document.querySelector("#pdf-filename");
+            pdfFilenameInput.value = currentPdfFilename;
+            const formData = new FormData(document.querySelector('#form'));
+            fetch(scriptURL, { method: 'POST', body: formData })
+              .then(response => {
+                currentIndex++;
+                if (currentIndex >= pdfs.length) {
+                  currentIndex = 0;
+                }
+                const pdfUrl = `https://drive.google.com/file/d/${pdfs[currentIndex]}/preview`;
+                document.querySelector("iframe").src = pdfUrl;
+                loadPdfFiles();
+              })
+              .catch(error => {
+                console.error(error);
+              });
+          } else {
+            console.log('No PDF files found.');
+          }
         }
+            
+        
+        const pdfList = document.getElementById("pdf-list");
+
+        pdfs.forEach((pdf, index) => {
+          const pdfUrl = `https://drive.google.com/file/d/${pdf}/preview`;
+          const pdfLink = document.createElement("a");
+          const pdfFilename = `${pdf}.pdf`;
+          pdfLink.href = pdfUrl;
+          pdfLink.textContent = pdfFilename;
+          pdfList.appendChild(document.createElement("li")).appendChild(pdfLink);
+        });
+        
+        
         
         nextBtn.addEventListener("click", () => {
           stopTimer();
@@ -371,58 +488,151 @@
           if (currentIndex >= pdfs.length) {
             currentIndex = 0;
           }
-          const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
+          const pdfUrl = `https://drive.google.com/file/d/${pdfs[currentIndex]}/preview`;
           document.querySelector("iframe").src = pdfUrl;
+          const currentPdfNumber = currentIndex + 1;
+          const totalPdfNumber = pdfs.length;
+          document.querySelector("#pdf-number").textContent = `Report ${currentPdfNumber} of ${totalPdfNumber}`;
+          pdfNumberElem.textContent = `Report ${currentPdfNumber} of ${totalPdfNumber}`;
           elapsedTimes[currentIndex] = 0;
           startTimer();
-        }); 
+          timerElem.textContent = "00:00";
+        });
         
-        loadPdfFiles();        
-      </script>
-      <script>
-        const scriptURL = 'https://script.google.com/macros/s/AKfycby8_gb-eUVgY653hOmQsMgnt2iinkuj-xlgwRJPVo6WEIfDL-OqilHwKt0ukGMVt_S0/exec'
-        const form = document.querySelector('#form')
-        const btn = document.querySelector('#submit')
-    
-    
-        form.addEventListener('submit', e => {
-          e.preventDefault();
-          btn.disabled = true;
-          btn.innerHTML = "Loading...";
-          
-          const currentPdfFilename = pdfs[currentIndex]; // store the filename of the current PDF
+        prevBtn.addEventListener("click", () => {
           stopTimer();
-          currentIndex++;
-          if (currentIndex >= pdfs.length) {
-            currentIndex = 0;
+          currentIndex--;
+          if (currentIndex < 0) {
+            currentIndex = pdfs.length - 1;
           }
-          const pdfUrl = `pdfs/${pdfs[currentIndex]}#navpanes=0`;
+          const pdfUrl = `https://drive.google.com/file/d/${pdfs[currentIndex]}/preview`;
           document.querySelector("iframe").src = pdfUrl;
-          document.querySelector("#pdf-filename").value = pdfs[currentIndex];
+          const currentPdfNumber = currentIndex + 1;
+          const totalPdfNumber = pdfs.length;
+          document.querySelector("#pdf-number").textContent = `PDF ${currentPdfNumber} of ${totalPdfNumber}`;
+          pdfNumberElem.textContent = `Report ${currentPdfNumber} of ${totalPdfNumber}`;
           elapsedTimes[currentIndex] = 0;
           startTimer();
+          timerElem.textContent = "00:00";
+        });
+        
           
-          console.log(form);
-          const formData = new FormData(form);
-          formData.append('pdf-filename', currentPdfFilename); // append the filename of the current PDF to the form data
-          fetch(scriptURL, { method: 'POST', body: formData })
-            .then(response => { 
-              btn.disabled = false;
-              btn.innerHTML = "Submit";
-              alert('Success!', response);
-              form.reset();
-              const formFields = form.querySelectorAll('input, select, textarea');
-              formFields.forEach(field => {
-                field.value = '';
-              });
-            })
-            .catch(error => {
-              btn.disabled = false;
-              btn.innerHTML = "Submit";
-              alert('Error!', error.message);
+          const pdfListBtn = document.getElementById("pdf-list-btn");
+          const pdfListSidebar = document.getElementById("pdf-list-sidebar");
+          
+        pdfListBtn.addEventListener("click", () => {
+        pdfListSidebar.classList.toggle("open");
+        pdfListBtn.classList.toggle("active");
+          });
+          
+        pdfListSidebar.addEventListener("mouseleave", (event) => {
+            if (!pdfListBtn.contains(event.relatedTarget)) {
+              pdfListSidebar.classList.remove("open");
+              pdfListBtn.classList.remove("active");
+            }
+          });
+          
+          // Get the list of links
+          const links = document.querySelectorAll("#pdf-list li a");
+          
+          // Add an event listener to each link
+          links.forEach(link => {
+            link.addEventListener("click", (event) => {
+                event.preventDefault();
+                links.forEach(link => {
+                    link.classList.remove("active");
+                    link.querySelector(".checkmark")?.remove();
+                });
+                link.classList.add("active");
+                const pdfUrl = link.dataset.pdfUrl;
+                document.querySelector("iframe").src = pdfUrl;
+                link.insertAdjacentHTML("beforeend", '<span class="checkmark">&#10003;</span>');
+                stopTimer();
+                currentIndex = Array.from(links).indexOf(link);
+                startTimer();
+                timerElem.textContent = "00:00";
+                document.querySelector("#pdf-number").textContent = `Report ${currentIndex + 1} of ${pdfs.length}`;
             });
         });
         
+          
+          
+          // Add event listener to the window object to open the PDF list sidebar when the pointer is near the right end of the webpage
+          window.addEventListener("mousemove", (event) => {
+            const distanceFromRight = window.innerWidth - event.pageX;
+            if (distanceFromRight < 50 || pdfListBtn.contains(event.target) || pdfListSidebar.contains(event.target)) {
+              pdfListSidebar.classList.add("open");
+            } else {
+              pdfListSidebar.classList.remove("open");
+              pdfListBtn.classList.remove("active");
+            }
+          });
+          
+          // Add CSS styles for the pdf list button
+          pdfListBtn.style.position = "absolute";
+          pdfListBtn.style.top = "10px";
+          pdfListBtn.style.right = "10px";
+          pdfListBtn.style.backgroundColor = "blue";
+          pdfListBtn.style.border = "1px solid black";
+          pdfListBtn.style.padding = "5px 10px";
+          pdfListBtn.style.cursor = "pointer";
+          
+          pdfListBtn.addEventListener("mouseover", () => {
+            if (!pdfListBtn.classList.contains("active")) {
+              pdfListBtn.style.backgroundColor = "lightgrey";
+            }
+          });
+          
+          pdfListBtn.addEventListener("mouseout", () => {
+            if (!pdfListBtn.classList.contains("active")) {
+              pdfListBtn.style.backgroundColor = "grey";
+            }
+          });
+          
+         
+          const scriptURL = 'https://script.google.com/macros/s/AKfycby8_gb-eUVgY653hOmQsMgnt2iinkuj-xlgwRJPVo6WEIfDL-OqilHwKt0ukGMVt_S0/exec';
+          const form = document.querySelector('#form');
+          const btn = document.querySelector('#submit');
+          
+          form.addEventListener('submit', e => {
+            e.preventDefault();
+            btn.disabled = true;
+            btn.innerHTML = "Loading...";
+          
+            const currentPdfUrl = document.querySelector("iframe").src;
+            const previousPdfFilename = `${pdfs[currentIndex]}`; // store the filename of the previous PDF
+            stopTimer();
+            currentIndex++;
+            if (currentIndex >= pdfs.length) {
+              currentIndex = 0;
+            }
+            const pdfUrl = `https://drive.google.com/file/d/${pdfs[currentIndex]}/preview`;
+            document.querySelector("iframe").src = pdfUrl;
+            const currentPdfFilename = `${pdfs[currentIndex]}`; // store the filename of the current PDF
+            document.querySelector("#pdf-filename").value = previousPdfFilename;
+            elapsedTimes[currentIndex] = 0;
+            startTimer();
+          
+            const formData = new FormData(form);
+            formData.append('pdf-filename', currentPdfFilename); // append the filename of the current PDF to the form data
+            fetch(scriptURL, { method: 'POST', body: formData })
+              .then(response => {
+                btn.disabled = false;
+                btn.innerHTML = "Submit";
+                alert('Success!', response);
+                form.reset();
+                const formFields = form.querySelectorAll('input, select, textarea');
+                formFields.forEach(field => {
+                  field.value = '';
+                });
+              })
+              .catch(error => {
+                btn.disabled = false;
+                btn.innerHTML = "Submit";
+                alert('Error!', error.message);
+              });
+          });
+          
     </script>
   </body>
 </html>
