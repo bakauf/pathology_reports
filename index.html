@@ -184,7 +184,7 @@
           }
           
           #pdf-list-sidebar.open {
-            right: -100px;
+            right: -80px;
           }
           
           #pdf-list {
@@ -483,7 +483,7 @@
         pdfs.forEach((pdf, index) => {
           const pdfUrl = `https://drive.google.com/file/d/${pdf}/preview`;
           const pdfLink = document.createElement("a");
-          const pdfFilename = `${pdf}.pdf`;
+          const pdfFilename = `${pdf}`;
           pdfLink.href = pdfUrl;
           pdfLink.textContent = pdfFilename;
           pdfList.appendChild(document.createElement("li")).appendChild(pdfLink);
